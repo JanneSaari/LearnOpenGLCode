@@ -1,6 +1,8 @@
 #pragma once
 
 #include "glad\glad.h"
+#include "glm\glm.hpp"
+#include "glm\gtc\matrix_transform.hpp"
 
 #include <string>
 #include <iostream>
@@ -17,6 +19,7 @@ public:
 	void setBool(const std::string &name, bool value) const;
 	void setInt(const std::string &name, int value) const;
 	void setFloat(const std::string &name, float value) const;
+	void setMat4(const std::string &name, glm::mat4 &mat) const;
 
 	unsigned int ID;
 
@@ -108,6 +111,11 @@ void Shader::setFloat(const std::string &name, float value) const
 {
 	glUniform1f(glGetUniformLocation(ID, name.c_str()), value);
 }
+void Shader::setMat4(const std::string &name, glm::mat4 &mat) const
+{
+	glUniformMatrix4fv(glGetUniformLocation(ID, name.c_str()), 1, GL_FALSE, &mat[0][0]);
+}
+
 
 // utility function for checking shader compilation/linking errors.
 // ------------------------------------------------------------------------
