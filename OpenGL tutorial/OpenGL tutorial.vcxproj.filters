@@ -24,8 +24,8 @@
   </ItemGroup>
   <ItemGroup>
     <None Include="shaders\shader.vs" />
-    <None Include="shaders\shader.fs" />
     <None Include="shaders\lamp.fs" />
+    <None Include="shaders\simplelighting.fs" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\shader.h">

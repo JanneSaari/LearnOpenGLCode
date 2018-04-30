@@ -152,7 +152,7 @@
   </ItemGroup>
   <ItemGroup>
     <None Include="shaders\lamp.fs" />
-    <None Include="shaders\shader.fs" />
+    <None Include="shaders\simplelighting.fs" />
     <None Include="shaders\shader.vs" />
   </ItemGroup>
   <ItemGroup>
