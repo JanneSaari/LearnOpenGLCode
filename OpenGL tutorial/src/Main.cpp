@@ -10,6 +10,7 @@
 #include "camera.h"
 
 #include <iostream>
+#include <algorithm>
 
 void framebuffer_size_callback(GLFWwindow* window, int width, int height);
 void process_input(GLFWwindow* window);
@@ -201,10 +202,32 @@ int main()
 		glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
+		//Lighting position
 		lightPos.x = 1.0f + (float)sin(glfwGetTime()) * 2.0f;
 		lightPos.z = (float)sin(glfwGetTime() / 2.0f) * 1.0f;
 
-		//Draw cube
+		//Lighting color
+		lightingShader.use();
+		glm::vec3 lightColor;
+		lightColor.x = std::max((float)sin(glfwGetTime() * 2.0f), 0.1f);
+		lightColor.y = std::max((float)sin(glfwGetTime() * 0.7f), 0.1f);
+		lightColor.z = std::max((float)sin(glfwGetTime() * 1.3f), 0.1f);
+
+		glm::vec3 ambientColor = lightColor * glm::vec3(0.2f);
+		glm::vec3 diffuseColor = lightColor * glm::vec3(0.5f);
+
+		lightingShader.setVec3("light.ambient", ambientColor);
+		lightingShader.setVec3("light.diffuse", diffuseColor);
+		lightingShader.setVec3("light.specular", 1.0f, 1.0f, 1.0f);
+
+		//Cube
+		//material
+		lightingShader.setVec3("objectColor", glm::vec3(1.0f, 0.5f, 0.31f));
+		lightingShader.setVec3("material.ambient", 1.0f, 0.5f, 0.31f);
+		lightingShader.setVec3("material.diffuse", 1.0f, 0.5f, 0.31f);
+		lightingShader.setVec3("material.specular", 0.5f, 0.5f, 0.5f);
+		lightingShader.setFloat("material.shininess", 32.0f);
+		//MVP
 		glm::mat4 model;
 		glm::mat4 view = camera.GetViewMatrix();
 		glm::mat4 projection;
@@ -213,14 +236,14 @@ int main()
 		lightingShader.setMat4("model", model);
 		lightingShader.setMat4("view", view);
 		lightingShader.setMat4("projection", projection);
-		lightingShader.setVec3("objectColor", glm::vec3(1.0f, 0.5f, 0.31f));
-		lightingShader.setVec3("lightColor", glm::vec3(1.0f, 1.0f, 1.0f));
 		lightingShader.setVec3("lightPos", lightPos);
+		//Render
 		glBindVertexArray(VAO);
 		glDrawArrays(GL_TRIANGLES, 0, 36);
 		glBindVertexArray(0);
 
-		//Draw lamp
+		//Lamp
+		//MVP
 		lampShader.use();
 		model = glm::mat4();
 		model = glm::translate(model, lightPos);
@@ -228,6 +251,7 @@ int main()
 		lampShader.setMat4("view", view);
 		lampShader.setMat4("projection", projection);
 		lampShader.setMat4("model", model);
+		//Render
 		glBindVertexArray(lightVAO);
 		glDrawArrays(GL_TRIANGLES, 0, 36);
 		glBindVertexArray(0);
