@@ -91,6 +91,13 @@ glm::vec3 cubePositions[] = {
 	glm::vec3(-1.3f,  1.0f, -1.5f)
 };
 
+glm::vec3 pointLightPositions[] = {
+	glm::vec3(0.7f,  0.2f,  2.0f),
+	glm::vec3(2.3f, -3.3f, -4.0f),
+	glm::vec3(-4.0f,  2.0f, -12.0f),
+	glm::vec3(0.0f,  0.0f, -3.0f)
+};
+
 int main()
 {
 	//Initialize GLFW and create window
@@ -193,6 +200,7 @@ int main()
 		lightingShader.setMat4("projection", projection);
 
 		//Lighting color
+		//TODO set uniform for each light
 		lightingShader.use();
 		glm::vec3 lightColor = glm::vec3(1.0f, 1.0f, 1.0f);
 
@@ -231,10 +239,10 @@ int main()
 
 		//Render
 		glBindVertexArray(VAO);
-		for (unsigned int i = 0; i < 10; i++)
+		for (unsigned int i = 0; i < cubePositions->length(); i++)
 		{
 			glm::mat4 model;
-			model = glm::translate(model, cubePositions[i]);
+			model = glm::translate(model, pointLightPositions[i]);
 			float angle = 20.0f * i;
 			model = glm::rotate(model, glm::radians(angle), glm::vec3(1.0f, 0.3f, 0.5f));
 			lightingShader.setMat4("model", model);
@@ -246,16 +254,21 @@ int main()
 		//Lamp
 		//MVP
 		lampShader.use();
-		glm::mat4 model;
-		model = glm::mat4();
-		model = glm::translate(model, lightPos);
-		model = glm::scale(model, glm::vec3(0.2f));
 		lampShader.setMat4("view", view);
 		lampShader.setMat4("projection", projection);
-		lampShader.setMat4("model", model);
 		//Render
 		glBindVertexArray(lightVAO);
-		glDrawArrays(GL_TRIANGLES, 0, 36);
+		for (unsigned int i = 0; i < pointLightPositions->length(); i++)
+		{
+			glm::mat4 model;
+			model = glm::translate(model, cubePositions[i]);
+			float angle = 20.0f * i;
+			model = glm::scale(model, glm::vec3(0.2f));
+			model = glm::rotate(model, glm::radians(angle), glm::vec3(1.0f, 0.3f, 0.5f));
+			lightingShader.setMat4("model", model);
+
+			glDrawArrays(GL_TRIANGLES, 0, 36);
+		}
 		glBindVertexArray(0);
 	}
 
