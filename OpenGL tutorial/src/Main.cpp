@@ -10,7 +10,6 @@
 #include "camera.h"
 
 #include <iostream>
-#include <algorithm>
 
 void framebuffer_size_callback(GLFWwindow* window, int width, int height);
 void process_input(GLFWwindow* window);
@@ -77,6 +76,19 @@ float vertices[] = {
 	0.5f,  0.5f,  0.5f,  0.0f,  1.0f,  0.0f,  1.0f, 0.0f,
 	-0.5f,  0.5f,  0.5f,  0.0f,  1.0f,  0.0f,  0.0f, 0.0f,
 	-0.5f,  0.5f, -0.5f,  0.0f,  1.0f,  0.0f,  0.0f, 1.0f
+};
+
+glm::vec3 cubePositions[] = {
+	glm::vec3(0.0f,  0.0f,  0.0f),
+	glm::vec3(2.0f,  5.0f, -15.0f),
+	glm::vec3(-1.5f, -2.2f, -2.5f),
+	glm::vec3(-3.8f, -2.0f, -12.3f),
+	glm::vec3(2.4f, -0.4f, -3.5f),
+	glm::vec3(-1.7f,  3.0f, -7.5f),
+	glm::vec3(1.3f, -2.0f, -2.5f),
+	glm::vec3(1.5f,  2.0f, -2.5f),
+	glm::vec3(1.5f,  0.2f, -1.5f),
+	glm::vec3(-1.3f,  1.0f, -1.5f)
 };
 
 int main()
@@ -165,26 +177,40 @@ int main()
 		glfwSwapBuffers(window);
 		glfwPollEvents();
 
-		glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
+		glClearColor(0.1f, 0.1f, 0.1f, 1.0f);
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
 		//Lighting position
-		lightPos.x = 1.0f + (float)sin(glfwGetTime()) * 2.0f;
-		lightPos.z = (float)sin(glfwGetTime() / 2.0f) * 1.0f;
+		//lightPos.x = 1.0f + (float)sin(glfwGetTime()) * 2.0f;
+		//lightPos.z = (float)sin(glfwGetTime() / 2.0f) * 1.0f;
+
+		//MVP
+		lightingShader.use();
+		glm::mat4 view = camera.GetViewMatrix();
+		glm::mat4 projection;
+		projection = glm::perspective(glm::radians(camera.Zoom), (float)SCREEN_WIDTH / (float)SCREEN_HEIGHT, 0.1f, 100.0f);
+		lightingShader.setMat4("view", view);
+		lightingShader.setMat4("projection", projection);
 
 		//Lighting color
 		lightingShader.use();
 		glm::vec3 lightColor = glm::vec3(1.0f, 1.0f, 1.0f);
-		//lightColor.x = std::max((float)sin(glfwGetTime() * 2.0f), 0.1f);
-		//lightColor.y = std::max((float)sin(glfwGetTime() * 0.7f), 0.1f);
-		//lightColor.z = std::max((float)sin(glfwGetTime() * 1.3f), 0.1f);
 
 		glm::vec3 ambientColor = lightColor * glm::vec3(0.2f);
 		glm::vec3 diffuseColor = lightColor * glm::vec3(0.5f);
 
+		lightingShader.setVec3("lightPos", camera.Position); //light position is calculated in view space so it is needed in vertex shaders
+		lightingShader.setVec3("light.direction", camera.Front);
+		lightingShader.setFloat("light.cutOff", glm::cos(glm::radians(12.5f)));
+		lightingShader.setFloat("light.outerCutOff", glm::cos(glm::radians(17.5f)));
+
 		lightingShader.setVec3("light.ambient", ambientColor);
 		lightingShader.setVec3("light.diffuse", diffuseColor);
 		lightingShader.setVec3("light.specular", 1.0f, 1.0f, 1.0f);
+
+		lightingShader.setFloat("light.constant", 1.0f);
+		lightingShader.setFloat("light.linear", 0.09f);
+		lightingShader.setFloat("light.quadratic", 0.032f);
 
 		//Cube
 		//material
@@ -192,16 +218,6 @@ int main()
 		lightingShader.setVec3("material.ambient", 1.0f, 0.5f, 0.31f);
 		lightingShader.setVec3("material.specular", 0.5f, 0.5f, 0.5f);
 		lightingShader.setFloat("material.shininess", 32.0f);
-		//MVP
-		glm::mat4 model;
-		glm::mat4 view = camera.GetViewMatrix();
-		glm::mat4 projection;
-		projection = glm::perspective(glm::radians(camera.Zoom), (float)SCREEN_WIDTH / (float)SCREEN_HEIGHT, 0.1f, 100.0f);
-		lightingShader.use();
-		lightingShader.setMat4("model", model);
-		lightingShader.setMat4("view", view);
-		lightingShader.setMat4("projection", projection);
-		lightingShader.setVec3("lightPos", lightPos);
 
 		// bind diffuse map
 		glActiveTexture(GL_TEXTURE0);
@@ -215,12 +231,22 @@ int main()
 
 		//Render
 		glBindVertexArray(VAO);
-		glDrawArrays(GL_TRIANGLES, 0, 36);
+		for (unsigned int i = 0; i < 10; i++)
+		{
+			glm::mat4 model;
+			model = glm::translate(model, cubePositions[i]);
+			float angle = 20.0f * i;
+			model = glm::rotate(model, glm::radians(angle), glm::vec3(1.0f, 0.3f, 0.5f));
+			lightingShader.setMat4("model", model);
+
+			glDrawArrays(GL_TRIANGLES, 0, 36);
+		}
 		glBindVertexArray(0);
 
 		//Lamp
 		//MVP
 		lampShader.use();
+		glm::mat4 model;
 		model = glm::mat4();
 		model = glm::translate(model, lightPos);
 		model = glm::scale(model, glm::vec3(0.2f));
